@@ -16,8 +16,8 @@ pipeline {
               steps {
                   script {			
                   sh "echo 'hola mundo desde GIT'"
-                  sh git clone 'https://github.com/juanRodriguezGarcia/HolaMundo.git'
-                  def file_in_workspace = copy_bin_to_wksp.inputGetFile('Jenkinsfile');
+                  sh 'git clone https://github.com/juanRodriguezGarcia/HolaMundo.git'
+                  def file_in_workspace = inputGetFile('Jenkinsfile');
 
                 }
               }
