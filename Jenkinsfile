@@ -16,6 +16,8 @@ pipeline {
               steps {
                   script {			
                   sh "echo 'hola mundo desde GIT'"
+                  sh "pwd"
+                  sh "ls -ltr"
                   sh './bajarRepo.sh'
                   def file_in_workspace = inputGetFile('Jenkinsfile');
 
