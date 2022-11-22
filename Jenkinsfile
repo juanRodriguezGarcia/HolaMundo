@@ -16,7 +16,7 @@ pipeline {
               steps {
                   script {			
                   sh "echo 'hola mundo desde GIT'"
-                  sh 'git clone https://github.com/juanRodriguezGarcia/HolaMundo.git'
+                  sh './bajarRepo.sh'
                   def file_in_workspace = inputGetFile('Jenkinsfile');
 
                 }
