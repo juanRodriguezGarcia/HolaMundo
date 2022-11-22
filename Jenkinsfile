@@ -18,8 +18,9 @@ pipeline {
                   sh "echo 'hola mundo desde GIT'"
                   sh "pwd"
                   sh "ls -ltr"
-                  sh './bajarRepo.sh'
-                  def file_in_workspace = inputGetFile('Jenkinsfile');
+                  sh 'dotnet build --source ../HolaMundoDotNet/'
+                  sh 'ls -ltr'
+                  //def file_in_workspace = inputGetFile('Jenkinsfile');
 
                 }
               }
