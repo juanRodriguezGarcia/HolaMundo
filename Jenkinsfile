@@ -20,7 +20,7 @@ pipeline {
                   sh "ls -ltr"
                   sh 'dotnet build --source ../HolaMundoDotNet/'
                   sh 'ls -ltr'
-                  SH 'sleep 30'
+                  sh 'sleep 30'
                   //def file_in_workspace = inputGetFile('Jenkinsfile');
 
                 }
