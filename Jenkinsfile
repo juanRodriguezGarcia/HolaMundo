@@ -33,13 +33,16 @@ pipeline {
           always {          
               deleteDir()
               sh "echo 'ESTA FASE SIEMPRE SE EJECUTA SIN IMPORTAR SI FUE FALLIDO O NO'"
+              sh "ls -ltr"
           }
           success {
                 sh "echo 'ESTA FASE SE EJECUTA SOLAMENTE SI FUE EXITOSO'"
+                sh "ls -ltr"
             }
 
           failure {
                 sh "echo 'ESTA FASE SE EJECUTA SI FUE FALLIDO'"
+                sh "ls -ltr"
           }
         
     }
