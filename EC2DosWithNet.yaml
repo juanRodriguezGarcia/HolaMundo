@@ -1,0 +1,198 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Mi primera instancia
+Parameters:
+  TipoInstancia:
+    Type: String
+    Description: Tipo de instancia que voy a usar
+    AllowedValues:
+      - t2.nano
+      - t2.micro
+    Default: t2.nano
+  SubnetId:
+    Type: String
+    Description: Id subnet public or private
+    AllowedValues:
+      - subnet-2288de58
+      - subnet-0adb51236315e3209
+    Default: subnet-2288de58
+  myVPCEC2SecurityGroup:
+    Type: String
+    Description: Security group
+    AllowedValues:
+      - sg-a48c37c6
+      - sg-0a29e27d21d196d60
+    Default: sg-a48c37c6
+  ParClave:
+    Type: 'AWS::EC2::KeyPair::KeyName'
+    Description: Par de claves para acceder a la instancia
+    AllowedPattern: .+
+    ConstraintDescription: Es obligatorio seleccionar un par de claves
+  ParametroPersonnalizado:
+    Type: String
+    Description: Mi Primer Parametro  xd xd (+.+)
+Mappings:
+  types:
+    t2.nano:
+      AMI: ami-08333bccc35d71140
+    t2.micro:
+      AMI: ami-083eed19fc801d7a4
+Conditions:
+  CrearVolumen: !Equals 
+    - !Ref TipoInstancia
+    - t2.nano
+Resources:
+  MiInstanciaDemo1:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      ImageId: !FindInMap 
+        - types
+        - !Ref TipoInstancia
+        - AMI
+      InstanceType: !Ref TipoInstancia
+      KeyName: !Ref ParClave
+      AvailabilityZone: us-east-2b
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: 'true'
+          DeviceIndex: '0'
+          GroupSet:
+            - !Ref myVPCEC2SecurityGroup
+          SubnetId: subnet-2288de58
+      UserData: !Base64 
+        'Fn::Join':
+          - |+
+
+          - - '#!/bin/bash -xe'
+            - >-
+              while [ ! -e /dev/sdc ]; do echo Esperando al disco; sleep 10;
+              done
+            - mkfs.ext3 /dev/sdc
+            - 'echo ''/dev/sdc /mnt/ ext3 defaults,auto 0 0'' >> /etc/fstab'
+            - mount /mnt
+  MiInstanciaDemo2:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      ImageId: !FindInMap 
+        - types
+        - !Ref TipoInstancia
+        - AMI
+      InstanceType: !Ref TipoInstancia
+      KeyName: keypair_ohio
+      AvailabilityZone: us-east-2a
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: 'false'
+          DeviceIndex: '0'
+          GroupSet:
+            - sg-0bf77167b6ce38a71
+          SubnetId: subnet-0adb51236315e3209
+      UserData: !Base64 
+        'Fn::Join':
+          - |+
+
+          - - '#!/bin/bash -xe'
+            - >-
+              while [ ! -e /dev/sdc ]; do echo Esperando al disco; sleep 10;
+              done
+            - mkfs.ext3 /dev/sdc
+            - 'echo ''/dev/sdc /mnt/ ext3 defaults,auto 0 0'' >> /etc/fstab'
+            - mount /mnt
+  MiVolumenInstance1:
+    Type: 'AWS::EC2::Volume'
+    Properties:
+      AvailabilityZone: !GetAtt 
+        - MiInstanciaDemo1
+        - AvailabilityZone
+      Size: '1'
+      VolumeType: gp2
+  MiVolumenMontaje:
+    Type: 'AWS::EC2::VolumeAttachment'
+    Properties:
+      InstanceId: !Ref MiInstanciaDemo1
+      VolumeId: !Ref MiVolumenInstance1
+      Device: /dev/sdc
+  MiVolumenInstance2:
+    Type: 'AWS::EC2::Volume'
+    Condition: CrearVolumen
+    Properties:
+      AvailabilityZone: !GetAtt 
+        - MiInstanciaDemo2
+        - AvailabilityZone
+      Size: '1'
+      VolumeType: gp2
+  MiVolumenMontaje2:
+    Type: 'AWS::EC2::VolumeAttachment'
+    Condition: CrearVolumen
+    Properties:
+      InstanceId: !Ref MiInstanciaDemo2
+      VolumeId: !Ref MiVolumenInstance2
+      Device: /dev/sdc
+  vpcPeeringConnection:
+    Type: 'AWS::EC2::VPCPeeringConnection'
+    Properties:
+      PeerOwnerId: 134383757275
+      PeerRegion: us-east-2
+      VpcId: vpc-348e7e5f
+      PeerVpcId: vpc-0cb9ee6190a2139c4
+      Tags:
+        - Key: Name
+          Value: cfn-peering-example
+  ReversePublicRoutingTableEntry:
+    Type: 'AWS::EC2::Route'
+    DependsOn:
+      - vpcPeeringConnection
+    Properties:
+      RouteTableId: rtb-0a79b3e656f18ae1d
+      DestinationCidrBlock: 172.31.0.0/16
+      VpcPeeringConnectionId: !Ref vpcPeeringConnection
+  ReversePrivateRoutingTableEntry:
+    Type: 'AWS::EC2::Route'
+    DependsOn:
+      - vpcPeeringConnection
+    Properties:
+      RouteTableId: rtb-4a3d8421
+      DestinationCidrBlock: 172.32.0.0/16
+      VpcPeeringConnectionId: !Ref vpcPeeringConnection
+  cwlInterfaceEndpoint:
+    Type: 'AWS::EC2::VPCEndpoint'
+    Properties: 
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action:
+              - '*:*'
+            Resource:
+              - '*'
+      VpcEndpointType: Interface
+      PrivateDnsEnabled: true
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.lambda'
+      VpcId: vpc-0cb9ee6190a2139c4
+      SubnetIds:
+        - subnet-0adb51236315e3209
+      SecurityGroupIds:
+        - sg-0bf77167b6ce38a71
+  cwlInterfaceEndpointS3:
+    Type: 'AWS::EC2::VPCEndpoint'
+    Properties: 
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action:
+              - '*:*'
+            Resource:
+              - '*'
+      VpcEndpointType: Interface
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
+      VpcId: vpc-0cb9ee6190a2139c4
+      SubnetIds:
+        - subnet-0adb51236315e3209
+      SecurityGroupIds:
+        - sg-0bf77167b6ce38a71        
+Outputs:
+  IpPublica:
+    Description: IP publica de la instancia
+    Value: !GetAtt 
+      - MiInstanciaDemo1
+      - PublicIp
