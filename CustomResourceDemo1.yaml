@@ -1,0 +1,18 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+  SumResource:
+    Type: "Custom::Summer"
+    Properties:
+      ServiceToken: "arn:aws:lambda:us-east-1:134383757275:function:CustomResourceDemo"
+      No1: 8
+      No2: 3
+      Tags:
+        - Key: aws:rt:ams-monitoring-policy
+          Value: ams-monitored
+        - Key: aws:rt:ams-monitoring-policy-platform
+          Value: ams-monitored-linux     
+Outputs:
+  Sum:
+    Value: !GetAtt SumResource.Sum
+  Restamos:
+    Value: !GetAtt SumResource.Restamos 
